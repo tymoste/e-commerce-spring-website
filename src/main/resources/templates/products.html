@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+<head>
+  <title>Products</title>
+  <link rel="stylesheet" th:href="@{/webjars/bootstrap/5.3.2/css/bootstrap.min.css}">
+
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container">
+    <a class="navbar-brand" href="#">My Store</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item">
+          <a class="nav-link" th:href="@{/products}">Products</a>
+        </li>
+        <li class="nav-item" sec:authorize="hasAuthority('ADMIN')">
+          <a class="nav-link" th:href="@{/products/add}">Add Product</a>
+        </li>
+        <li class="nav-item" sec:authorize="hasAuthority('ADMIN')">
+          <a class="nav-link" th:href="@{/categories}">Add Category</a>
+        </li>
+        <li class="nav-item" sec:authorize="hasAuthority('ADMIN')">
+          <a class="nav-link" th:href="@{/orders}">Orders</a>
+        </li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="categoryDropdown" role="button" data-bs-toggle="dropdown"
+             aria-expanded="false">
+            Categories
+          </a>
+          <ul class="dropdown-menu" aria-labelledby="categoryDropdown">
+            <li th:each="category : ${categories}">
+              <a class="dropdown-item" th:text="${category.name}" th:href="@{/products(category=${category.id})}"></a>
+            </li>
+          </ul>
+        </li>
+      </ul>
+      <ul class="navbar-nav">
+        <li class="nav-item" sec:authorize="hasAuthority('USER')">
+          <a class="nav-link" th:href="@{/cart/view}">Cart</a>
+        </li>
+        <li class="nav-item" sec:authorize="isAuthenticated()">
+          <a class="nav-link" th:href="@{/user/profile}">Profile</a>
+        </li>
+        <li class="nav-item" sec:authorize="!isAuthenticated()">
+          <a class="nav-link" th:href="@{/login}">Login</a>
+        </li>
+        <li class="nav-item" sec:authorize="!isAuthenticated()">
+          <a class="nav-link" th:href="@{/user/register}">Register</a>
+        </li>
+        <li class="nav-item" sec:authorize="isAuthenticated()">
+          <a class="nav-link" th:href="@{/logout}">Logout</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container mt-4">
+  <h2>Products</h2>
+  <form method="get" th:action="@{/products}">
+    <div class="input-group mb-3">
+      <input type="text" name="search" th:value="${search}" class="form-control" placeholder="Search for products">
+      <button class="btn btn-primary" type="submit">Search</button>
+    </div>
+  </form>
+  <div class="row">
+    <div class="col-12">
+      <table class="table table-bordered">
+        <thead>
+        <tr>
+          <th>Name</th>
+          <th>Description</th>
+          <th>Price</th>
+          <th>Category</th>
+          <th>Image</th>
+          <th sec:authorize="hasAuthority('USER') or hasAnyAuthority('ADMIN')">Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="product : ${productPage.content}" th:if="${!product.isDeleted}">
+          <td th:text="${product.name}"></td>
+          <td th:text="${product.description}"></td>
+          <td th:text="${product.price}"></td>
+          <td th:text="${product.category.name}"></td>
+          <td>
+            <img th:src="@{/uploads/{image}(image=${product.imageUrl})}" class="img-thumbnail" width = "100" alt="image">
+          </td>
+          <td sec:authorize="hasAuthority('USER') or hasAnyAuthority('ADMIN')">
+            <a class="btn btn-primary" sec:authorize="hasAuthority('ADMIN')" th:href="@{/products/edit/{id}(id=${product.id})}">Edit</a>
+            <a class="btn btn-danger" sec:authorize="hasAuthority('ADMIN')" th:href="@{/products/delete/{id}(id=${product.id})}">Delete</a>
+            <form sec:authorize="hasAuthority('USER')" th:action="@{/cart/add/{productId}(productId=${product.id})}" method="get">
+              <button type="submit" class="btn btn-primary">Add to Cart</button>
+            </form>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+      <nav aria-label="Page navigation example">
+        <ul class="pagination">
+          <li class="page-item" th:classappend="${productPage.number == 0} ? 'disabled'">
+            <a class="page-link" th:href="@{|/products?page=${productPage.number - 1}&size=${productPage.size}&search=${search}|}">Previous</a>
+          </li>
+          <li class="page-item" th:each="i : ${#numbers.sequence(0, productPage.totalPages - 1)}"
+              th:classappend="${i == productPage.number} ? 'active'">
+            <a class="page-link" th:href="@{|/products?page=${i}&size=${productPage.size}&search=${search}|}" th:text="${i + 1}"></a>
+          </li>
+          <li class="page-item" th:classappend="${productPage.number + 1 == productPage.totalPages} ? 'disabled'">
+            <a class="page-link" th:href="@{|/products?page=${productPage.number + 1}&size=${productPage.size}&search=${search}|}">Next</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.10.2/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"></script>
+</body>
+</html>
